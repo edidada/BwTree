@@ -17,21 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++ make
-
-      # The Makefile defaults to g++-5 + libpapi + jemalloc preload.
-      # Override all three so a stock ubuntu runner can build and run.
-      # bwtree.h uses fprintf/stdout without including <cstdio>; newer g++
-      # has no transitive include, so inject it via -include (CI-only, no
-      # source change).
+      # g++ and make are preinstalled on ubuntu-22.04 runners; no apt needed.
+      # The Makefile defaults to g++-5 + libpapi + jemalloc preload; override
+      # all three. bwtree.h uses fprintf/stdout without <cstdio>, and accesses
+      # private base members from derived templates (accepted by g++-5, an
+      # error on modern g++), so inject the header and relax access checking.
       - name: Prepare build directories
         run: make prepare PAPI_FLAG=-DNO_USE_PAPI
 
       - name: Compile
-        run: make -j2 CXX="g++ -include cstdio" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make -j2 CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
 
       - name: Run test suite
-        run: make test CXX="g++ -include cstdio" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make test CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
