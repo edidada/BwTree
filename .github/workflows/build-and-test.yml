@@ -1,0 +1,34 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - 'edidada/**'
+  pull_request:
+    branches:
+      - 'edidada/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make
+
+      # The Makefile defaults to g++-5 + libpapi + jemalloc preload.
+      # Override all three so a stock ubuntu runner can build and run.
+      - name: Prepare build directories
+        run: make prepare PAPI_FLAG=-DNO_USE_PAPI
+
+      - name: Compile
+        run: make -j2 CXX=g++ PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+
+      - name: Run test suite
+        run: make test CXX=g++ PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
