@@ -24,11 +24,14 @@ jobs:
 
       # The Makefile defaults to g++-5 + libpapi + jemalloc preload.
       # Override all three so a stock ubuntu runner can build and run.
+      # bwtree.h uses fprintf/stdout without including <cstdio>; newer g++
+      # has no transitive include, so inject it via -include (CI-only, no
+      # source change).
       - name: Prepare build directories
         run: make prepare PAPI_FLAG=-DNO_USE_PAPI
 
       - name: Compile
-        run: make -j2 CXX=g++ PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make -j2 CXX="g++ -include cstdio" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
 
       - name: Run test suite
-        run: make test CXX=g++ PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make test CXX="g++ -include cstdio" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
