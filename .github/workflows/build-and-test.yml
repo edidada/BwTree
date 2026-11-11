@@ -25,8 +25,11 @@ jobs:
       - name: Prepare build directories
         run: make prepare PAPI_FLAG=-DNO_USE_PAPI
 
+      # GMON_FLAG lands at the end of the link command, so -latomic resolves
+      # the __atomic_load_16 / __atomic_compare_exchange_16 calls emitted for
+      # the 16-byte std::atomic (g++-5 inlined them, g++-11 uses libatomic).
       - name: Compile
-        run: make -j2 CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make -j2 CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB= GMON_FLAG=-latomic
 
       - name: Run test suite
-        run: make test CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB=
+        run: make test CXX="g++ -include cstdio -fno-access-control" PAPI_FLAG=-DNO_USE_PAPI PRELOAD_LIB= GMON_FLAG=-latomic
